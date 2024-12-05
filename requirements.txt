@@ -1,0 +1,12 @@
+aiohttp
+TgCrypto
+pyrogram
+pymongo
+pyromod==1.5
+dnspython
+asyncio
+nest_asyncio
+python-dotenv
+
+
+
