@@ -1,40 +1,56 @@
-#(©)Codexbotz
-#Recoded By @Its_Tartaglia_Childe
-
 import base64
 import re
 import asyncio
 from pyrogram import filters
 from pyrogram.enums import ChatMemberStatus
-from config import FORCE_SUB_CHANNEL_1, FORCE_SUB_CHANNEL_2, FORCE_SUB_CHANNEL_3, FORCE_SUB_CHANNEL_4, ADMINS, AUTO_DELETE_TIME, AUTO_DEL_SUCCESS_MSG
 from pyrogram.errors.exceptions.bad_request_400 import UserNotParticipant
 from pyrogram.errors import FloodWait
 from database.database import get_force_sub_channel  # Import the MongoDB function
+from config import FORCE_SUB_CHANNEL_1, FORCE_SUB_CHANNEL_2, FORCE_SUB_CHANNEL_3, FORCE_SUB_CHANNEL_4, ADMINS, AUTO_DELETE_TIME, AUTO_DEL_SUCCESS_MSG
 
 async def is_subscribed(filter, client, update):
-    if not (FORCE_SUB_CHANNEL_1 or FORCE_SUB_CHANNEL_2 or FORCE_SUB_CHANNEL_3 or FORCE_SUB_CHANNEL_4):
+    # Retrieve the force subscription channel from MongoDB
+    try:
+        force_sub_channel = get_force_sub_channel("FORCE_SUB_CHANNEL_1")
+    except Exception as e:
+        print(f"Error retrieving channel from MongoDB: {e}")
+        force_sub_channel = None
+
+    # Fallback to config.py if no channel is found in MongoDB
+    if not force_sub_channel:
+        force_sub_channel = FORCE_SUB_CHANNEL_1
+
+    # Skip the check if no valid channel ID is found
+    if not force_sub_channel:
         return True
 
     user_id = update.from_user.id
 
+    # Bypass check for admins
     if user_id in ADMINS:
         return True
 
-    member_status = ChatMemberStatus.OWNER, ChatMemberStatus.ADMINISTRATOR, ChatMemberStatus.MEMBER
+    # Allowed member statuses
+    allowed_statuses = {ChatMemberStatus.OWNER, ChatMemberStatus.ADMINISTRATOR, ChatMemberStatus.MEMBER}
 
-    for channel_id in [FORCE_SUB_CHANNEL_1, FORCE_SUB_CHANNEL_2, FORCE_SUB_CHANNEL_3, FORCE_SUB_CHANNEL_4]:
-        if not channel_id:
-            continue
-
-        try:
-            member = await client.get_chat_member(chat_id=channel_id, user_id=user_id)
-        except UserNotParticipant:
+    # Check if the user is subscribed to the channel
+    try:
+        member = await client.get_chat_member(chat_id=force_sub_channel, user_id=user_id)
+        if member.status not in allowed_statuses:
             return False
+    except UserNotParticipant:
+        return False
+    except FloodWait as e:
+        print(f"FloodWait error: Waiting for {e.value} seconds")
+        await asyncio.sleep(e.value)
+        return False
+    except Exception as e:
+        print(f"Unexpected error: {e}")
+        return False
 
-        if member.status not in member_status:
-            return False
-
+    # If the user is subscribed, return True
     return True
+
 
 async def encode(string):
     string_bytes = string.encode("ascii")
@@ -43,31 +59,30 @@ async def encode(string):
     return base64_string
 
 async def decode(base64_string):
-    base64_string = base64_string.strip("=")
+    base64_string = base64_string.strip("=")  # Handle padding errors for older links
     base64_bytes = (base64_string + "=" * (-len(base64_string) % 4)).encode("ascii")
     string_bytes = base64.urlsafe_b64decode(base64_bytes)
-    string = string_bytes.decode("ascii")
-    return string
+    return string_bytes.decode("ascii")
 
 async def get_messages(client, message_ids):
     messages = []
     total_messages = 0
     while total_messages != len(message_ids):
-        temb_ids = message_ids[total_messages:total_messages+200]
+        temp_ids = message_ids[total_messages:total_messages+200]
         try:
             msgs = await client.get_messages(
                 chat_id=client.db_channel.id,
-                message_ids=temb_ids
+                message_ids=temp_ids
             )
         except FloodWait as e:
             await asyncio.sleep(e.x)
             msgs = await client.get_messages(
                 chat_id=client.db_channel.id,
-                message_ids=temb_ids
+                message_ids=temp_ids
             )
-        except:
+        except Exception:
             pass
-        total_messages += len(temb_ids)
+        total_messages += len(temp_ids)
         messages.extend(msgs)
     return messages
 
@@ -126,7 +141,6 @@ async def delete_file(messages, client, process):
             print(f"The attempt to delete the media {msg.id} was unsuccessful: {e}")
 
     await process.edit_text(AUTO_DEL_SUCCESS_MSG)
-
 
 
 subscribed = filters.create(is_subscribed)
