@@ -11,6 +11,10 @@ from helper_func import subscribed, encode, decode, get_messages
 from database.database import add_user, del_user, full_userbase, present_user
 from plugins.FORCESUB import f_invitelink
 
+# Setting up the logger
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
+
 # Single /start handler for the bot
 @Bot.on_message(filters.command('start') & filters.private)
 async def start_command(client: Client, message: Message):
@@ -143,7 +147,7 @@ REPLY_ERROR = """<code>Use this command as a replay to any telegram message with
 async def not_joined(client: Client, message: Message):
     buttons = [
         [
-            InlineKeyboardButton(text="Join Channel", url=client.invitelink),
+            InlineKeyboardButton(text="Join Channel", url=f_invitelink if 'f_invitelink' in globals() else client.invitelink),
             InlineKeyboardButton(text="Join Channel", url=client.invitelink2),
         ],
         [
