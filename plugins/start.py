@@ -117,19 +117,19 @@ async def start_command(client: Client, message: Message):
                         logger.error(f"Error copying message {msg.message_id}: {e}")
                         pass
 
-if track_msgs:
-    try:
-        logger.info("Sending auto-delete message to user.")
-        delete_data = await client.send_message(
-            chat_id=message.from_user.id,
-            text=AUTO_DELETE_MSG.format(time=AUTO_DELETE_TIME)
-        )
-        asyncio.create_task(delete_file(track_msgs, client, delete_data))
-    except Exception as e:
-        logger.error(f"Error sending auto-delete message: {e}")
-else:
-    logger.info("No messages to track for deletion.")
-    logger.debug("Sending start message to user.")
+        if track_msgs:
+            try:
+                logger.info("Sending auto-delete message to user.")
+                delete_data = await client.send_message(
+                    chat_id=message.from_user.id,
+                    text=AUTO_DELETE_MSG.format(time=AUTO_DELETE_TIME)
+                )
+                asyncio.create_task(delete_file(track_msgs, client, delete_data))
+            except Exception as e:
+                logger.error(f"Error sending auto-delete message: {e}")
+        else:
+            logger.info("No messages to track for deletion.")
+
     reply_markup = InlineKeyboardMarkup(
         [
             [
@@ -138,43 +138,41 @@ else:
             ]
         ]
     )
-    # Add code to send this `reply_markup` as a message if needed.
+    if START_PIC:
+        try:
+            logger.debug("Sending start photo with caption.")
+            await message.reply_photo(
+                photo=START_PIC,
+                caption=START_MSG.format(
+                    first=message.from_user.first_name,
+                    last=message.from_user.last_name,
+                    username=None if not message.from_user.username else '@' + message.from_user.username,
+                    mention=message.from_user.mention,
+                    id=message.from_user.id
+                ),
+                reply_markup=reply_markup,
+                quote=True
+            )
+        except Exception as e:
+            logger.error(f"Error sending start photo: {e}")
+    else:
+        try:
+            logger.debug("Sending start text message.")
+            await message.reply_text(
+                text=START_MSG.format(
+                    first=message.from_user.first_name,
+                    last=message.from_user.last_name,
+                    username=None if not message.from_user.username else '@' + message.from_user.username,
+                    mention=message.from_user.mention,
+                    id=message.from_user.id
+                ),
+                reply_markup=reply_markup,
+                disable_web_page_preview=True,
+                quote=True
+            )
+        except Exception as e:
+            logger.error(f"Error sending start text message: {e}")
 
-        if START_PIC:
-            try:
-                logger.debug("Sending start photo with caption.")
-                await message.reply_photo(
-                    photo=START_PIC,
-                    caption=START_MSG.format(
-                        first=message.from_user.first_name,
-                        last=message.from_user.last_name,
-                        username=None if not message.from_user.username else '@' + message.from_user.username,
-                        mention=message.from_user.mention,
-                        id=message.from_user.id
-                    ),
-                    reply_markup=reply_markup,
-                    quote=True
-                )
-            except Exception as e:
-                logger.error(f"Error sending start photo: {e}")
-        else:
-            try:
-                logger.debug("Sending start text message.")
-                await message.reply_text(
-                    text=START_MSG.format(
-                        first=message.from_user.first_name,
-                        last=message.from_user.last_name,
-                        username=None if not message.from_user.username else '@' + message.from_user.username,
-                        mention=message.from_user.mention,
-                        id=message.from_user.id
-                    ),
-                    reply_markup=reply_markup,
-                    disable_web_page_preview=True,
-                    quote=True
-                )
-            except Exception as e:
-                logger.error(f"Error sending start text message: {e}")
-        return
 
 #=====================================================================================##
 
