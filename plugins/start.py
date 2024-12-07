@@ -117,28 +117,29 @@ async def start_command(client: Client, message: Message):
                         logger.error(f"Error copying message {msg.message_id}: {e}")
                         pass
 
-        if track_msgs:
-            try:
-                logger.info("Sending auto-delete message to user.")
-                delete_data = await client.send_message(
-                    chat_id=message.from_user.id,
-                    text=AUTO_DELETE_MSG.format(time=AUTO_DELETE_TIME)
-                )
-                asyncio.create_task(delete_file(track_msgs, client, delete_data))
-            except Exception as e:
-                logger.error(f"Error sending auto-delete message: {e}")
-        else:
-            logger.info("No messages to track for deletion.")
-
-        return
-
-    else:
-        logger.debug("Sending start message to user.")
-        reply_markup = InlineKeyboardMarkup(
-            [
-                [InlineKeyboardButton("😊 About Me", callback_data="about"), InlineKeyboardButton("🔒 Close", callback_data="close")]
-            ]
+if track_msgs:
+    try:
+        logger.info("Sending auto-delete message to user.")
+        delete_data = await client.send_message(
+            chat_id=message.from_user.id,
+            text=AUTO_DELETE_MSG.format(time=AUTO_DELETE_TIME)
         )
+        asyncio.create_task(delete_file(track_msgs, client, delete_data))
+    except Exception as e:
+        logger.error(f"Error sending auto-delete message: {e}")
+else:
+    logger.info("No messages to track for deletion.")
+    logger.debug("Sending start message to user.")
+    reply_markup = InlineKeyboardMarkup(
+        [
+            [
+                InlineKeyboardButton("😊 About Me", callback_data="about"),
+                InlineKeyboardButton("🔒 Close", callback_data="close"),
+            ]
+        ]
+    )
+    # Add code to send this `reply_markup` as a message if needed.
+
         if START_PIC:
             try:
                 logger.debug("Sending start photo with caption.")
