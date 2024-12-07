@@ -299,29 +299,3 @@ Unsuccessful: <code>{unsuccessful}</code></b>"""
         logger.info(f"User {message.from_user.id} did not reply to a message for broadcast")
         await asyncio.sleep(8)
         await msg.delete()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
- 
-             
-             
-                         
- 
-                    
-
-    
-    
-
