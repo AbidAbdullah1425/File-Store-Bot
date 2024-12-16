@@ -7,11 +7,10 @@ from pyrogram.enums import ChatMemberStatus
 from pyrogram.errors.exceptions.bad_request_400 import UserNotParticipant
 from pyrogram.errors import FloodWait
 from database.database import get_force_sub_channel  # Import the MongoDB function
-from config import FORCE_SUB_CHANNEL_1, FORCE_SUB_CHANNEL_2, FORCE_SUB_CHANNEL_3, FORCE_SUB_CHANNEL_4, ADMINS, AUTO_DELETE_TIME, AUTO_DEL_SUCCESS_MSG
+from config import FORCE_SUB_CHANNEL_1, FORCE_SUB_CHANNEL_2, FORCE_SUB_CHANNEL_3, FORCE_SUB_CHANNEL_4, ADMINS, AUTO_DELETE_TIME, AUTO_DEL_SUCCESS_MSG, LOGGER
 
-# Configure logging
-logger = logging.getLogger(__name__)
-logging.basicConfig(level=logging.DEBUG, format="%(asctime)s - %(levelname)s - %(message)s")
+# Use logger from config
+logger = LOGGER(__name__)
 
 async def is_subscribed(filter, client, update):
     logger.debug(f"Checking subscription for user ID: {update.from_user.id}")
